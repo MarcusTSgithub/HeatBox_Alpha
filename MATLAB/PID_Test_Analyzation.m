@@ -1,3 +1,5 @@
+% MATLAB code to analyse the heat box data gathered from the Python script.
+
 clc; clear all; close all;
 
 %% PID test analysis
