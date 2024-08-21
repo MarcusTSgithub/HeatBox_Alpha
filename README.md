@@ -1,10 +1,11 @@
 # BiLab_Heatbox
-Code used to run the heat box.
+Code used to run the heating box.
 
-This repository contains all the necessary code to use the heat box at Bi Lab. It uses: 
+This repository contains all the necessary code to use the heating box at Bi Lab, SU.
+
 - Arduino code which is run from the Arduino IDE
 - Python code which I run from the PyCharm IDE
 - Matlab script to analyze the data collected by the Python code
 
-To be able to ONLY use the box for research experiments you need the Arduino code to upload to the Ardunio computer in the box. It's in this code you change the set point temperatures and related variables. I do recommend to get the Python code aswell to get a good overview of the real-time temperature and power readings in the box to verify it is doing what it's suppose to.
+A written guide on how to operate the heating box can be found on the internal server at "INSECT lab\Marcus\Box".
 
