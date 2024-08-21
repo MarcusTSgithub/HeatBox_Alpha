@@ -5,8 +5,7 @@ import serial
 from datetime import datetime
 from datetime import timedelta
 
-
-SERIAL_PORT = '/dev/cu.usbmodem14201'
+SERIAL_PORT = '/dev/cu.usbmodem14101'
 BAUD_RATE = 115200
 
 ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
@@ -14,7 +13,6 @@ ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
 Sensors = ["DHT22_1", "DHT22_2", "DHT22_3", "DHT22_4"]
 
 time_data = []
-time_data_norm = []
 temp1_data = []
 temp2_data = []
 temp3_data = []
@@ -23,16 +21,17 @@ power_data = []
 power_data_crnt = []
 temp_setpoint_data = []
 setPoint = []
-chosen_temp_sensor = [9]  # [1 = DHT22_1, 2 = DHT22_2, ]
-ambTemp = []
-stabTempDiff = []
+chosen_temp_sensor = [9]  # [1 = DHT22_1, 2 = DHT22_2, 3 = DHT22_3, 4 = DHT22_4]
 pid_values = []
 save_data = False
+sensors = 0
 
 
 def read_and_process_data():
     line = ser.readline().decode('utf-8').strip()
     sensorVals = line.split('\t')
+    if len(sensorVals) == 0:
+        return False
     if sensorVals[0] == 'pid values:':
         pid_values.append(float(sensorVals[1]))
         pid_values.append(float(sensorVals[2]))
@@ -42,13 +41,6 @@ def read_and_process_data():
     if sensorVals[0] == 'DHT22 Heat Dim Test: Temperature setpoint at':
         setPoint.append(float(sensorVals[1]))
         print(f'Set Point Temperature = {setPoint[0]}')
-        return False
-    if sensorVals[0] == 'Values for python script. Ambient Temperature:':
-        ambTemp.append(float(sensorVals[1]))
-        stabTempDiff.append(float(sensorVals[3]))
-        print(f'Ambient Temperature = {ambTemp[0]}, Stabilize Temperature Difference = {stabTempDiff[0]}')
-        return False
-    if len(sensorVals) == 0:
         return False
     if sensorVals[0] == 'Dim Power:':
         time_data.append((float(sensorVals[11]))/1000)  # time value/refresh rate tick
@@ -122,7 +114,7 @@ def on_close_excel(event):
         file_name = "Heat_Test_" + d + "_" + t + ".xlsx"
         df = pd.DataFrame({'Time (s)': time_data, 'Temperature 1 (dht22)': temp1_data, 'Temperature 2 (dht22)': temp2_data, 'Temperature 3 (dht22)': temp3_data, 'Temperature 4 (dht22)': temp4_data, 'Lamp Power (0-255)': power_data})
         df_pid = pd.DataFrame({'Kp': [pid_values[0]], 'Ki': [pid_values[1]], 'Kd': [pid_values[2]]})
-        df_other = pd.DataFrame({'Set Point': [setPoint[0]], 'Ambient Temperature': [ambTemp[0]], 'Stab Temp Diff': [stabTempDiff[0]]})
+        df_other = pd.DataFrame({'Set Point': [setPoint[0]]})
         dataSize = df.size
         if dataSize > 600:  # If test duration is longer than (600/4)*refreshTime = 300 sec = 5 min
             with pd.ExcelWriter(file_name) as excel_writer:
