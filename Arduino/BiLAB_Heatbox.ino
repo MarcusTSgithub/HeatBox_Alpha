@@ -18,21 +18,12 @@ DHT dht22_4(DHT22_4_PIN,DHT22);
 DimmableLight light(psmPIN);
 
 //# constants
-const double tempThresh = 38; 
-const double tempMargin = 0.5;
+const double setPoint = 32; 
 const unsigned long refreshTime = 2000; //milliseconds
-const int dPower_LOW = 50;  //0-255 value
-const int dPower_MIDLOW = 100;
-const int dPower_MIDHIGH = 150;
-const int dPower_HIGH = 200;
-const int dPower_MaxP = 160;
-const double AMBIENT_TEMP = 24;
-double startDiffTemp = 2.5;
-const int fansOutput = HIGH;
+const int dPower_MaxP = 160; // Max output is 255 by default, but its too hot for the box
+const double startDiffTemp = 2.5; // CHECK IF CONST IS OKEY
 
 //#  changing variables
-int r = LOW;
-uint8_t count = 0;
 double dht22_1_t = 0;
 double dht22_2_t = 0;
 double dht22_3_t = 0;
@@ -41,30 +32,26 @@ unsigned long time = 0;
 unsigned long _lastreadtime = 0;
 int dPower = 0;
 double dPowerdb = 0; //for PID function, needs double type
+int fansOutput = LOW;
 bool start = true; //usually "true" for max power at start
-bool stabilizeP = false;
-double stabilizePtemp = tempThresh - startDiffTemp;
-int FANS = LOW;
-int chosenSensor = 1; // [1 = DHT22_1, 2 = DHT22_2]
+int chosenSensor = 1; // [1 = DHT22_1, 2 = DHT22_2, 3 = DHT22_3, 4 = DHT22_4]
 double TempSensor = dht22_1_t; //needs to be changed to specified sensor
 bool readSuccess_dht22_1_t = true;
 bool readSuccess_dht22_2_t = true;
 bool readSuccess_dht22_3_t = true;
 bool readSuccess_dht22_4_t = true;
-// bool *readSuccess = &readSuccess_dht22_1_t; //pointer to chosen sensor readsuccess value
 
-
-int succCnt = 0; //when it reaches 5 all above values are non-zero and derivates can be accurately calculated
+// Temperature stabilization startup phase specific variables
+bool stabilizeP = false;
 const int stabilizeSlopeTime = 32; //seconds between slope maximum same values
 const int stabLoops = stabilizeSlopeTime*1000/refreshTime;
 double pTempArray[stabLoops];
-double prevStabRefTemp;
 
 //PID parameters
 double Kp = 55.0;
 double Ki = 0.2;
 double Kd = 29.1;
-PID myPID(&TempSensor, &dPowerdb, &tempThresh, Kp, Ki, Kd, DIRECT);
+PID myPID(&TempSensor, &dPowerdb, &setPoint, Kp, Ki, Kd, DIRECT);
 
 void setup(){
 
@@ -81,7 +68,7 @@ void setup(){
   dht22_4.begin();
   Serial.println("Done!");
   Serial.print("DHT22 Heat Dim Test: Temperature setpoint at\t");
-  Serial.print(tempThresh);
+  Serial.print(setPoint);
   Serial.print("\t");
   Serial.print("degrees");
   Serial.println();
@@ -92,10 +79,6 @@ void setup(){
   Serial.print("\t");
   Serial.print(Kd);
   Serial.print("\t");
-  Serial.println();
-  Serial.print("Values for python script. Ambient Temperature:\t");
-  Serial.print(AMBIENT_TEMP);
-  Serial.print("\t");
   Serial.print("Stabilize Temperature Difference:");
   Serial.print("\t");
   Serial.print(startDiffTemp);
@@ -104,16 +87,14 @@ void setup(){
   
   pinMode(fanPIN_1,OUTPUT);
   pinMode(fanPIN_2,OUTPUT);
-  digitalWrite(fanPIN_1,fansOutput);
-  digitalWrite(fanPIN_2,fansOutput);
+  digitalWrite(fanPIN_1,HIGH);
+  digitalWrite(fanPIN_2,HIGH);
   myPID.SetSampleTime(refreshTime);
   myPID.SetOutputLimits(0, dPower_MaxP);
 
   delay(refreshTime);
   readTempData(); // call once to avoid first scan error in loop
-  //turn the PID on
-  //myPID.SetMode(MANUAL);
-  myPID.SetMode(AUTOMATIC);
+  myPID.SetMode(AUTOMATIC); //turn the PID on
   
 }
 
@@ -131,7 +112,7 @@ void loop()
     }
     
     if(start){
-      if(tempThresh - TempSensor > startDiffTemp){
+      if(setPoint - TempSensor > startDiffTemp){
         startingPhase();
       }
       else{
@@ -152,28 +133,8 @@ void loop()
 
 void startingPhase(){
   dPowerdb = dPower_MaxP;
-  FANS = fansOutput;
 }
 
-void dPowerLogic(){
-  if(TempSensor >= tempThresh + tempMargin){
-   dPower = 0;
-   FANS = HIGH;
-  }
-  else if(TempSensor <= tempThresh - tempMargin){
-   dPower = dPower_MIDHIGH;
-   FANS = HIGH;
-  }
-  else{
-   dPower = dPower_LOW;
-   FANS = LOW;
-  }
-}
-
-void setFans(){
-  digitalWrite(fanPIN_1, FANS);
-  digitalWrite(fanPIN_2, FANS);
-}
 
 void readTempData() {
   
@@ -244,7 +205,7 @@ void printText(){
     Serial.print("Time (ms):\t");
     Serial.print(time);
     Serial.print("\t");
-    Serial.print(tempThresh);
+    Serial.print(setPoint);
     Serial.print("\t");
     Serial.print("Chosen sensor:\t"); 
     Serial.print(chosenSensor); 
