@@ -6,6 +6,8 @@ This repository contains all the necessary code to use the heating box at Bi Lab
 - Arduino code which is run from the Arduino IDE
 - Python code which I run from the PyCharm IDE
 - Matlab script to analyze the data collected by the Python code
+- Written guide on how to assemble, install and operate the Heatbox
 
-A written guide on how to operate the heating box can be found on the internal server at "INSECT lab\Marcus\Box".
+
+The written guide can also be found on the internal server at "INSECT lab\Marcus\Box".
 
